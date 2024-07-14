@@ -22,7 +22,7 @@ const textPrompt = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     if (error) {
         return res.status(404).send({
             message: "invalid payload",
-            status: 404
+            status: 404,
         });
     }
     let model = main_1.default.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -33,7 +33,7 @@ const textPrompt = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     catch (e) {
         console.log(e);
     }
-    let response = yield (result === null || result === void 0 ? void 0 : result.response);
+    let response = result === null || result === void 0 ? void 0 : result.response;
     const gSpack = response === null || response === void 0 ? void 0 : response.text();
     res.send(gSpack);
 });

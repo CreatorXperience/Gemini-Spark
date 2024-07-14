@@ -7,7 +7,7 @@ import {
   GoogleGenerativeAI,
   GoogleGenerativeAIError,
 } from "@google/generative-ai";
-import text_prompt from "./routes/prompt"
+import text_prompt from "./routes/prompt";
 
 config();
 
@@ -20,7 +20,6 @@ const logger = winston.createLogger({
   ],
 });
 
-
 const PORT = process.env.PORT || 3000;
 
 if (!process.env.GEMINI_API_KEY) {
@@ -31,15 +30,14 @@ if (!process.env.GEMINI_API_KEY) {
 let genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-let {server,app} = HttpServer();
+let { server, app } = HttpServer();
 
 app.get("/", (req, res) => {
   return res.send("Welcome to this ApI");
 });
 
-app.use(express.json())
-app.use("/prompt",text_prompt);
-
+app.use(express.json());
+app.use("/prompt", text_prompt);
 
 const socketIO = new Server(server);
 
@@ -51,5 +49,4 @@ server.listen(PORT, () => {
   logger.info(`Listening on port ${PORT}`);
 });
 
-
-export default genAI
+export default genAI;

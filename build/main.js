@@ -15,7 +15,7 @@ const logger = winston_1.default.createLogger({
     level: "info",
     format: winston_1.default.format.json(),
     transports: [
-        new winston_1.default.transports.File({ filename: "error.log", level: "error" }),
+        new winston_1.default.transports.File({ filename: "err.log", level: "error" }),
         new winston_1.default.transports.Console({ level: "info" }),
     ],
 });
@@ -31,6 +31,7 @@ app.get("/", (req, res) => {
     return res.send("Welcome to this ApI");
 });
 app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/prompt", prompt_1.default);
 const socketIO = new socket_io_1.Server(server);
 socketIO.on("connection", (socket) => {

@@ -1,16 +1,20 @@
-import Joi from "joi"
+import Joi from "joi";
 type TPrompt = {
-    text: string
-}
-const txtPromptValidator = (payload:TPrompt)=>{
-   
-    let txtValidator = Joi.object({
-        text: Joi.string().required()
-    })
+  text: string;
+};
+const txtPromptValidator = (payload: TPrompt) => {
+  let txtValidator = Joi.object({
+    text: Joi.string().required(),
+  });
 
-    return txtValidator.validate(payload)
-}
+  return txtValidator.validate(payload);
+};
 
-export {
-    txtPromptValidator
-}
+const imgPromptValidator = (payload: TPrompt) => {
+  let txtValidator = Joi.object({
+    text: Joi.string().required(),
+  });
+
+  return txtValidator.validate(payload);
+};
+export { txtPromptValidator, imgPromptValidator };

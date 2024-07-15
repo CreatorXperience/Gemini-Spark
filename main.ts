@@ -15,7 +15,7 @@ const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),
   transports: [
-    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({ filename: "err.log", level: "error" }),
     new winston.transports.Console({ level: "info" }),
   ],
 });
@@ -37,6 +37,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use("/prompt", text_prompt);
 
 const socketIO = new Server(server);

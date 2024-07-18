@@ -17,6 +17,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google-cloud/aiplatform": "^3.25.0",
+    "@google-cloud/vertexai": "^1.4.0",
     "@google/generative-ai": "^0.14.1",
     "concurrently": "^8.2.2",
     "dotenv": "^16.4.5",

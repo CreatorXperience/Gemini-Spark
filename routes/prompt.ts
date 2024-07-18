@@ -1,5 +1,5 @@
 import express from "express";
-import { imagePrompt, textPrompt } from "../controllers/prompt_controllers";
+import { textImagePrompt, textPrompt } from "../controllers/prompt_controllers";
 import multer from "multer";
 import path from "path";
 
@@ -10,15 +10,13 @@ const storage = multer.diskStorage({
     cb(null, path.dirname(__dirname) + "/uploads");
   },
   filename: (_, file, cb) => {
-    cb(
-      null,
-      file.originalname + "-" + Date.now() + path.extname(file.originalname)
-    );
+    cb(null, file.originalname + path.extname(file.originalname));
   },
 });
 const upload = multer({ storage });
 
+router.post("/user", upload.single("image"), textImagePrompt);
 router.post("/text", textPrompt);
-router.post("/image", upload.single("image"), imagePrompt);
+// router.post("/chat", upload.single("image"), imagePrompt);
 
 export default router;

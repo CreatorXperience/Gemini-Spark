@@ -8,15 +8,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.imagePrompt = exports.textPrompt = void 0;
+exports.textPrompt = exports.textImagePrompt = void 0;
 const text_prompt_validator_1 = require("../utils/text_prompt_validator");
-const main_1 = __importDefault(require("../main"));
-const fileToGeneratePart_1 = require("../utils/fileToGeneratePart");
+const server_1 = require("@google/generative-ai/server");
+const main_1 = require("../main");
+var ROLE;
+(function (ROLE) {
+    ROLE["role"] = "user";
+})(ROLE || (ROLE = {}));
 const textPrompt = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, e_1, _b, _c;
     if (!req.body) {
         return res.status(404).send({ message: "Empty payload", status: 404 });
     }
@@ -27,42 +36,101 @@ const textPrompt = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             status: 404,
         });
     }
-    let model = main_1.default.getGenerativeModel({ model: "gemini-1.5-flash" });
+    let model = main_1.genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: {
+            temperature: 1.5,
+            maxOutputTokens: 2000,
+        },
+    });
+    let chat = model.startChat({
+        history: [{ role: "user", parts: [{ text: req.body.text }] }],
+    });
     let result;
     try {
-        result = yield model.generateContent(req.body.text);
+        result = yield chat.sendMessageStream(req.body.text);
     }
     catch (e) {
         console.log(e);
     }
-    let response = result === null || result === void 0 ? void 0 : result.response;
-    const gSpack = response === null || response === void 0 ? void 0 : response.text();
-    res.send(gSpack);
+    if (result === null || result === void 0 ? void 0 : result.stream) {
+        try {
+            for (var _d = true, _e = __asyncValues(result === null || result === void 0 ? void 0 : result.stream), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
+                _c = _f.value;
+                _d = false;
+                const item = _c;
+                res.write(JSON.stringify(item));
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        res.end();
+    }
 });
 exports.textPrompt = textPrompt;
-const imagePrompt = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.file) {
-        return res.status(404).send({ message: "File not Found", status: 404 });
+const textImagePrompt = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, e_2, _b, _c;
+    let { error } = (0, text_prompt_validator_1.txtPromptValidator)(req.body);
+    if (error) {
+        return res.status(404).send({
+            message: "invalid payload",
+            status: 404,
+        });
     }
-    // let { error } = txtPromptValidator(req.body);
-    // if (error) {
-    //   return res.status(404).send({
-    //     message: "invalid payload",
-    //     status: 404,
-    //   });
-    // }
-    console.log(req.file);
-    let model = main_1.default.getGenerativeModel({ model: "gemini-1.5-flash" });
-    let obj = [(0, fileToGeneratePart_1.fileToGeneratePart)(req.file)];
-    let result;
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI API KEY not provided");
+    }
+    let contentType = {
+        contents: [{ role: ROLE.role, parts: [{ text: req.body.text }] }],
+    };
+    if (req.file) {
+        const GfileManager = new server_1.GoogleAIFileManager(process.env.GEMINI_API_KEY);
+        let GUpload = yield GfileManager.uploadFile(req.file.path, {
+            mimeType: req.file.mimetype,
+            displayName: req.file.filename,
+        });
+        const nfile = {
+            fileData: {
+                fileUri: GUpload.file.uri,
+                mimeType: GUpload.file.mimeType,
+            },
+            text: req.body.text,
+        };
+        contentType = {
+            contents: [
+                {
+                    role: ROLE.role,
+                    parts: [
+                        {
+                            text: req.body.text,
+                        },
+                        nfile,
+                    ],
+                },
+            ],
+        };
+    }
+    let contentStream = yield main_1.initializeVertex.visionGModel.generateContentStream(contentType);
     try {
-        result = yield model.generateContent(["Do you know this", ...obj]);
+        for (var _d = true, _e = __asyncValues(contentStream.stream), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
+            _c = _f.value;
+            _d = false;
+            const data = _c;
+            res.write(JSON.stringify(data + "\n"));
+        }
     }
-    catch (e) {
-        console.log(e);
+    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+    finally {
+        try {
+            if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+        }
+        finally { if (e_2) throw e_2.error; }
     }
-    let response = result === null || result === void 0 ? void 0 : result.response;
-    const gSpack = response === null || response === void 0 ? void 0 : response.text();
-    res.send(gSpack);
+    res.end();
 });
-exports.imagePrompt = imagePrompt;
+exports.textImagePrompt = textImagePrompt;

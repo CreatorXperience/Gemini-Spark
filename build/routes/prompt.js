@@ -13,10 +13,11 @@ const storage = multer_1.default.diskStorage({
         cb(null, path_1.default.dirname(__dirname) + "/uploads");
     },
     filename: (_, file, cb) => {
-        cb(null, file.originalname + "-" + Date.now() + path_1.default.extname(file.originalname));
+        cb(null, file.originalname + path_1.default.extname(file.originalname));
     },
 });
 const upload = (0, multer_1.default)({ storage });
+router.post("/user", upload.single("image"), prompt_controllers_1.textImagePrompt);
 router.post("/text", prompt_controllers_1.textPrompt);
-router.post("/image", upload.single("image"), prompt_controllers_1.imagePrompt);
+// router.post("/chat", upload.single("image"), imagePrompt);
 exports.default = router;

@@ -3,11 +3,10 @@ import { config } from "dotenv";
 import HttpServer from "./utils/socket_connection";
 import winston from "winston";
 import { Server } from "socket.io";
-import {
-  GoogleGenerativeAI,
-  GoogleGenerativeAIError,
-} from "@google/generative-ai";
+import { GoogleGenerativeAIError } from "@google/generative-ai";
 import text_prompt from "./routes/prompt";
+import { initVertex } from "./services/vertex.ai";
+import { initGemini } from "./services/genai";
 
 config();
 
@@ -27,18 +26,19 @@ if (!process.env.GEMINI_API_KEY) {
   throw new GoogleGenerativeAIError("Invalid or Empty Api key");
 }
 
-let genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+let initializeVertex = initVertex();
+let genAI = initGemini();
 
 let { server, app } = HttpServer();
 
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
   return res.send("Welcome to this ApI");
 });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/prompt", text_prompt);
+
+app.use("/spark", text_prompt);
 
 const socketIO = new Server(server);
 
@@ -50,4 +50,4 @@ server.listen(PORT, () => {
   logger.info(`Listening on port ${PORT}`);
 });
 
-export default genAI;
+export { initializeVertex, genAI };

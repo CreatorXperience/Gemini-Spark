@@ -1,9 +1,10 @@
+import { UploadFileResponse } from "@google/generative-ai/dist/server/server";
 import fs from "fs";
-const fileToGeneratePart = (path: Express.Multer.File) => {
+const fileToGeneratePart = (path: UploadFileResponse) => {
   return {
-    inlineData: {
-      data: Buffer.from(fs.readFileSync(path.path)).toString("base64"),
-      mimeType: path.mimetype,
+    fileData: {
+      mimeType: path.file.mimeType,
+      fileUri: path.file.uri,
     },
   };
 };

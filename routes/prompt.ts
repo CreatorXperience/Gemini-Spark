@@ -15,8 +15,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-router.post("/user", upload.single("image"), textImagePrompt);
-router.post("/text", textPrompt);
+router.post("/chat-with-image", upload.single("image"), textImagePrompt);
+router.post("/chat-without-image", textPrompt);
 // router.post("/chat", upload.single("image"), imagePrompt);
 
 export default router;

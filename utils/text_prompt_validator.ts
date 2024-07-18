@@ -1,10 +1,11 @@
 import Joi from "joi";
 type TPrompt = {
-  text: string;
+  messages: string;
 };
 const txtPromptValidator = (payload: TPrompt) => {
   let txtValidator = Joi.object({
-    text: Joi.string().required(),
+    messages: Joi.string(),
+    prompt: Joi.string().required(),
   });
 
   return txtValidator.validate(payload);
@@ -12,7 +13,7 @@ const txtPromptValidator = (payload: TPrompt) => {
 
 const imgPromptValidator = (payload: TPrompt) => {
   let txtValidator = Joi.object({
-    text: Joi.string().required(),
+    messages: Joi.string().required(),
   });
 
   return txtValidator.validate(payload);

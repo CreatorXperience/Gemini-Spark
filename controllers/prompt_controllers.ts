@@ -7,6 +7,19 @@ enum ROLE {
   role = "user",
 }
 
+type TContent = {
+  role: ROLE.role;
+  parts: [
+    { text: string },
+    { fileData: { fileUri: string; mimeType: string } }
+  ];
+}[];
+
+type TContenta = {
+  role: ROLE.role;
+  parts: [{ text: string }];
+}[];
+
 const textPrompt = async (req: Request, res: Response) => {
   if (!req.body) {
     return res.status(404).send({ message: "Empty payload", status: 404 });
@@ -25,13 +38,27 @@ const textPrompt = async (req: Request, res: Response) => {
       temperature: 1.5,
       maxOutputTokens: 2000,
     },
+    systemInstruction: {
+      role: "model",
+      parts: [
+        {
+          text: "you are an AI, Your name is Spark, Please monitor the prompt and generate a response only if the text contains @Spark. If @Spark is not present in the prompt, do not generate any response.",
+        },
+        {
+          text: "You are part of a group chat where you will be asked to perform tasks based on the previous conversations in the chat.",
+        },
+        {
+          text: "Your prompt might be something like `user1: what's is today`\n`user2: I don't know let's ask @Spark`",
+        },
+      ],
+    },
   });
   let chat = model.startChat({
-    history: [{ role: "user", parts: [{ text: req.body.text }] }],
+    history: [{ role: "user", parts: [{ text: req.body.messages }] }],
   });
   let result;
   try {
-    result = await chat.sendMessageStream(req.body.text);
+    result = await chat.sendMessageStream(req.body.prompt);
   } catch (e: any) {
     console.log(e);
   }
@@ -40,7 +67,7 @@ const textPrompt = async (req: Request, res: Response) => {
     for await (const item of result?.stream) {
       res.write(JSON.stringify(item));
     }
-    res.end();
+    return res.end();
   }
 };
 
@@ -56,9 +83,11 @@ const textImagePrompt = async (req: Request, res: Response) => {
     throw new Error("GEMINI API KEY not provided");
   }
 
-  let contentType = {
-    contents: [{ role: ROLE.role, parts: [{ text: req.body.text }] }],
-  };
+  let history: TContent | TContenta = [
+    { role: ROLE.role, parts: [{ text: req.body.messages as string }] },
+  ];
+
+  let chatSesssion = initializeVertex.visionGModel.startChat({ history });
 
   if (req.file) {
     const GfileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
@@ -67,36 +96,32 @@ const textImagePrompt = async (req: Request, res: Response) => {
       displayName: req.file.filename,
     });
 
-    const nfile = {
+    const fileData = {
       fileData: {
         fileUri: GUpload.file.uri,
         mimeType: GUpload.file.mimeType,
       },
-      text: req.body.text,
     };
 
-    contentType = {
-      contents: [
-        {
-          role: ROLE.role,
-          parts: [
-            {
-              text: req.body.text,
-            },
-            nfile,
-          ],
-        },
-      ],
-    };
-  }
-  let contentStream = await initializeVertex.visionGModel.generateContentStream(
-    contentType
-  );
+    let response = await chatSesssion.sendMessageStream([
+      { text: req.body.prompt },
+      fileData,
+    ]);
 
-  for await (const data of contentStream.stream) {
-    res.write(JSON.stringify(data + "\n"));
+    for await (const item of response.stream) {
+      res.write(JSON.stringify(item));
+    }
+
+    res.end();
+    await GfileManager.deleteFile(GUpload.file.name);
   }
 
+  let response = await chatSesssion.sendMessageStream([
+    { text: req.body.prompt },
+  ]);
+  for await (const item of response.stream) {
+    res.write(JSON.stringify(item));
+  }
   res.end();
 };
 

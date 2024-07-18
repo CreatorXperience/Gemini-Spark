@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const prompt_controllers_1 = require("../controllers/prompt_controllers");
+const group_chat_prompt_controllers_1 = require("../controllers/group_chat_prompt_controllers");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 let router = express_1.default.Router();
@@ -17,7 +17,9 @@ const storage = multer_1.default.diskStorage({
     },
 });
 const upload = (0, multer_1.default)({ storage });
-router.post("/group-chat-with-image", upload.single("image"), prompt_controllers_1.textImagePrompt);
-router.post("/group-chat-without-image", prompt_controllers_1.textPrompt);
+router.post("/group-chat-with-image", upload.single("image"), group_chat_prompt_controllers_1.textImagePrompt);
+router.post("/group-chat-without-image", group_chat_prompt_controllers_1.textPrompt);
+router.post("/single-chat-with-image", upload.single("image"), group_chat_prompt_controllers_1.textImagePrompt);
+router.post("/single-chat-without-image", group_chat_prompt_controllers_1.textPrompt);
 // router.post("/chat", upload.single("image"), imagePrompt);
 exports.default = router;

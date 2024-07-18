@@ -42,13 +42,10 @@ const textPrompt = async (req: Request, res: Response) => {
       role: "model",
       parts: [
         {
-          text: "you are an AI, Your name is Spark, Please monitor the prompt and generate a response only if the text contains @Spark. If @Spark is not present in the prompt, do not generate any response.",
+          text: "you are an AI, Your name is Spark",
         },
         {
-          text: "You are part of a group chat where you will be asked to perform tasks based on the previous conversations in the chat.",
-        },
-        {
-          text: "Your prompt might be something like `user1: what's is today`\n`user2: I don't know let's ask @Spark`",
+          text: "You are part in a chat where you will be asked to perform tasks based on the previous conversations in the chat.",
         },
       ],
     },

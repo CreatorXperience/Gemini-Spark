@@ -4,7 +4,7 @@ import HttpServer from "./utils/socket_connection";
 import winston from "winston";
 import { Server } from "socket.io";
 import { GoogleGenerativeAIError } from "@google/generative-ai";
-import text_prompt from "./routes/prompt";
+import groupChat from "./routes/group-chat";
 import { initVertex } from "./services/vertex.ai";
 import { initGemini } from "./services/genai";
 
@@ -38,7 +38,7 @@ app.get("/", (_, res) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/spark", text_prompt);
+app.use("/spark", groupChat);
 
 const socketIO = new Server(server);
 

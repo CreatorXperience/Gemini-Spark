@@ -1,12 +1,21 @@
 import Joi from "joi";
 type TPrompt = {
-  messages: string;
+  conversations: [{ messages?: string }, { model?: string }, string];
 };
 const txtPromptValidator = (payload: TPrompt) => {
   let txtValidator = Joi.object({
-    messages: Joi.string(),
-    prompt: Joi.string().required(),
-  });
+    conversations: Joi.array()
+      .items(
+        Joi.alternatives().try(
+          Joi.string().required(),
+          Joi.object({
+            messages: Joi.string(),
+            model: Joi.string(),
+          }).min(1)
+        )
+      )
+      .required(),
+  }).required();
 
   return txtValidator.validate(payload);
 };

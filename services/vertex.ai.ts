@@ -34,11 +34,19 @@ const initVertex = () => {
   const textGModel = $vertex.getGenerativeModel({
     model: textModel,
     systemInstruction: instruction,
+    generationConfig: {
+      temperature: 1.5,
+      maxOutputTokens: 2000,
+    },
   });
 
   const visionGModel = $vertex.getGenerativeModel({
     model: visionModel,
     systemInstruction: instruction,
+    generationConfig: {
+      temperature: 1.5,
+      maxOutputTokens: 2000,
+    },
   });
 
   const generativeModelPreview = $vertex.preview.getGenerativeModel({

@@ -1,7 +1,8 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { txtPromptValidator } from "../utils/text_prompt_validator";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { initializeVertex, genAI } from "../main";
+import getMemories from "../utils/getMemories";
 
 enum ROLE {
   role = "user",
@@ -15,12 +16,11 @@ type TContent = {
   ];
 }[];
 
-type TContenta = {
-  role: ROLE.role;
-  parts: [{ text: string }];
-}[];
-
-const textPrompt = async (req: Request, res: Response) => {
+const singleTextPrompt = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   if (!req.body) {
     return res.status(404).send({ message: "Empty payload", status: 404 });
   }
@@ -42,33 +42,46 @@ const textPrompt = async (req: Request, res: Response) => {
       role: "model",
       parts: [
         {
-          text: "you are an AI, Your name is Spark",
+          text: "you are an AI, Your name is Spark and you're build on top of the Gemini model",
         },
         {
-          text: "You are part in a chat where you will be asked to perform tasks based on the previous conversations in the chat.",
+          text: "You are part of a chat with a single user where you will be asked to perform tasks based on the previous conversations in the chat, Do not respond to history from many users",
         },
       ],
     },
   });
+
+  let { memories, prompt } = getMemories(req.body.conversations);
+
   let chat = model.startChat({
-    history: [{ role: "user", parts: [{ text: req.body.messages }] }],
+    history: memories,
   });
   let result;
   try {
-    result = await chat.sendMessageStream(req.body.prompt);
+    result = await chat.sendMessageStream(prompt);
   } catch (e: any) {
     console.log(e);
+    next(e);
   }
 
   if (result?.stream) {
-    for await (const item of result?.stream) {
-      res.write(JSON.stringify(item));
+    try {
+      for await (const item of result?.stream) {
+        res.write(JSON.stringify(item));
+      }
+    } catch (e) {
+      next(e);
     }
+
     return res.end();
   }
 };
 
-const textImagePrompt = async (req: Request, res: Response) => {
+const singleTextImagePrompt = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let { error } = txtPromptValidator(req.body);
   if (error) {
     return res.status(404).send({
@@ -77,14 +90,18 @@ const textImagePrompt = async (req: Request, res: Response) => {
     });
   }
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI API KEY not provided");
+    try {
+      throw new Error("GEMINI API KEY not provided");
+    } catch (e) {
+      return next(e);
+    }
   }
 
-  let history: TContent | TContenta = [
-    { role: ROLE.role, parts: [{ text: req.body.messages as string }] },
-  ];
+  let { memories, prompt } = getMemories(req.body.conversations);
 
-  let chatSesssion = initializeVertex.visionGModel.startChat({ history });
+  let chatSesssion = initializeVertex.visionGModel.startChat({
+    history: memories,
+  });
 
   if (req.file) {
     const GfileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
@@ -101,25 +118,28 @@ const textImagePrompt = async (req: Request, res: Response) => {
     };
 
     let response = await chatSesssion.sendMessageStream([
-      { text: req.body.prompt },
+      { text: prompt },
       fileData,
     ]);
 
-    for await (const item of response.stream) {
-      res.write(JSON.stringify(item));
+    try {
+      for await (const item of response.stream) {
+        res.write(JSON.stringify(item));
+      }
+    } catch (e) {
+      next(e);
     }
 
     res.end();
     await GfileManager.deleteFile(GUpload.file.name);
   }
 
-  let response = await chatSesssion.sendMessageStream([
-    { text: req.body.prompt },
-  ]);
+  let response = await chatSesssion.sendMessageStream([{ text: prompt }]);
+
   for await (const item of response.stream) {
     res.write(JSON.stringify(item));
   }
   res.end();
 };
 
-export { textImagePrompt, textPrompt };
+export { singleTextImagePrompt, singleTextPrompt };

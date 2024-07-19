@@ -5,6 +5,10 @@ import {
 } from "../controllers/group_chat_prompt_controllers";
 import multer from "multer";
 import path from "path";
+import {
+  singleTextImagePrompt,
+  singleTextPrompt,
+} from "../controllers/single_chat_prompt_controller";
 
 let router = express.Router();
 
@@ -20,8 +24,12 @@ const upload = multer({ storage });
 
 router.post("/group-chat-with-image", upload.single("image"), textImagePrompt);
 router.post("/group-chat-without-image", textPrompt);
-router.post("/single-chat-with-image", upload.single("image"), textImagePrompt);
-router.post("/single-chat-without-image", textPrompt);
+router.post(
+  "/single-chat-with-image",
+  upload.single("image"),
+  singleTextImagePrompt
+);
+router.post("/single-chat-without-image", textPrompt, singleTextPrompt);
 
 // router.post("/chat", upload.single("image"), imagePrompt);
 

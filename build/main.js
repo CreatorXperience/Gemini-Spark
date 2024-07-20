@@ -82,7 +82,13 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/spark", spark_chat_1.default);
 app.use(error_1.default);
-const socketIO = new socket_io_1.Server(server);
+const socketIO = new socket_io_1.Server(server, {
+    cors: {
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
+        credentials: true,
+    },
+});
 socketIO.on("connection", (socket) => {
     logger.info("connected to socket");
 });

@@ -65,7 +65,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/spark", groupChat);
 app.use(catchErrors);
 
-const socketIO = new Server(server);
+const socketIO = new Server(server, {
+  cors: {
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
+    credentials: true,
+  },
+});
 
 socketIO.on("connection", (socket) => {
   logger.info("connected to socket");

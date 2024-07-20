@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently \"nodemon --exec ts-node main.ts\" \"tsc --watch\""
+    "dev": "concurrently \"nodemon --exec ts-node main.ts\" \"tsc --watch\"",
+    "start": "node ./build/main.js",
+    "build": "tsc"
   },
   "keywords": [
     "AI",

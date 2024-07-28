@@ -75,6 +75,10 @@ const socketIO = new Server(server, {
 
 socketIO.on("connection", (socket) => {
   logger.info("connected to socket");
+
+  socket.on("message", (message) => {
+    console.log(message);
+  });
 });
 
 server.listen(PORT, () => {

@@ -78,6 +78,8 @@ socketIO.on("connection", (socket) => {
 
   socket.on("message", (message) => {
     console.log(message);
+
+    socket.emit("return", `${message} from server`);
   });
 });
 

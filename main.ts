@@ -11,6 +11,11 @@ import catchErrors from "./middlewares/error";
 require("express-async-errors");
 config();
 
+type TOnlineUser = {
+  socketId: string;
+  userId: string;
+};
+
 const PORT = process.env.PORT || 3000;
 
 const logger = winston.createLogger({
@@ -73,13 +78,30 @@ const socketIO = new Server(server, {
   },
 });
 
+let onlineUsers: TOnlineUser[] = [];
+
 socketIO.on("connection", (socket) => {
   logger.info("connected to socket");
 
   socket.on("message", (message) => {
-    console.log(message);
+    socket.to(message[0]).emit(message[1]);
+  });
 
-    socket.emit("return", `${message} from server`);
+  socket.on("addonlineusers", (user) => {
+    let userExist = onlineUsers.some((item) => item.userId === user);
+    if (!userExist) {
+      onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
+    }
+
+    socket.emit("onlineusers", onlineUsers);
+  });
+
+  socket.on("create-room", (room) => {
+    socket.join(room);
+  });
+
+  socket.on("join-room", (existingRoom) => {
+    socket.join(existingRoom);
   });
 });
 

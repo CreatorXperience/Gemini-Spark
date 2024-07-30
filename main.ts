@@ -91,10 +91,11 @@ socketIO.on("connection", (socket) => {
     socket.to(message[0]).emit(message[1]);
   });
 
-  socket.on("chat-with-spark", (value: string) => {
+  socket.on("sparkChat", (value: string) => {
     let realData = JSON.parse(value) as TSocketReq;
-    console.log("from chat")
+    console.log("from chat");
     console.log(realData);
+    socket.emit("return", JSON.stringify(realData));
     generateFromText(realData, socket);
   });
 

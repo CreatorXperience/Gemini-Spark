@@ -37,6 +37,8 @@ const spark_chat_1 = __importDefault(require("./routes/spark-chat"));
 const vertex_ai_1 = require("./services/vertex.ai");
 const genai_1 = require("./services/genai");
 const error_1 = __importDefault(require("./middlewares/error"));
+const upload_1 = __importDefault(require("./routes/upload"));
+const generateFromText_1 = __importDefault(require("./utils/generateFromText"));
 require("express-async-errors");
 (0, dotenv_1.config)();
 const PORT = process.env.PORT || 3000;
@@ -81,6 +83,7 @@ app.get("/", (_, res) => {
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/spark", spark_chat_1.default);
+app.use("/upload", upload_1.default);
 app.use(error_1.default);
 const socketIO = new socket_io_1.Server(server, {
     cors: {
@@ -89,8 +92,42 @@ const socketIO = new socket_io_1.Server(server, {
         credentials: true,
     },
 });
+let onlineUsers = [];
 socketIO.on("connection", (socket) => {
     logger.info("connected to socket");
+    socket.on("message", (message) => {
+        socket.to(message[0]).emit(message[1]);
+    });
+    socket.on("chat-with-spark", (value) => {
+        let realData = JSON.parse(value);
+        console.log("from chat");
+        console.log(realData);
+        (0, generateFromText_1.default)(realData, socket);
+    });
+    socket.on("image-with-message", () => { });
+    socket.on("addonlineusers", (user) => {
+        let userExist = onlineUsers.some((item) => item.userId === user);
+        if (!userExist) {
+            onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
+        }
+        else {
+            onlineUsers = onlineUsers.filter((existingUser) => existingUser.userId != user);
+            onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
+        }
+        socket.emit("onlineusers", onlineUsers);
+        console.log(onlineUsers);
+    });
+    socket.on("offline", (user) => {
+        onlineUsers = onlineUsers.filter((existingUser) => existingUser.userId == user);
+        socket.emit("onlineusers", onlineUsers);
+    });
+    socket.on("create-room", (room) => {
+        socket.join(room);
+        console.log(room);
+    });
+    socket.on("join-room", (existingRoom) => {
+        socket.join(existingRoom);
+    });
 });
 server.listen(PORT, () => {
     logger.info(`Listening on port ${PORT}`);

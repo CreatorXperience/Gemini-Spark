@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { config } from "dotenv";
 import HttpServer from "./utils/socket_connection";
 import winston, { format } from "winston";
@@ -8,6 +8,7 @@ import groupChat from "./routes/spark-chat";
 import { initVertex } from "./services/vertex.ai";
 import { initGemini } from "./services/genai";
 import catchErrors from "./middlewares/error";
+import uploadImage from "./routes/upload";
 require("express-async-errors");
 config();
 
@@ -68,6 +69,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/spark", groupChat);
+app.use("/upload", uploadImage);
 app.use(catchErrors);
 
 const socketIO = new Server(server, {
@@ -87,6 +89,8 @@ socketIO.on("connection", (socket) => {
     socket.to(message[0]).emit(message[1]);
   });
 
+  socket.on("image-with-message", () => {});
+
   socket.on("addonlineusers", (user) => {
     let userExist = onlineUsers.some((item) => item.userId === user);
     if (!userExist) {
@@ -94,10 +98,20 @@ socketIO.on("connection", (socket) => {
     }
 
     socket.emit("onlineusers", onlineUsers);
+    console.log(onlineUsers);
+  });
+
+  socket.on("offline", (user) => {
+    onlineUsers = onlineUsers.filter(
+      (existingUser) => existingUser.userId == user
+    );
+
+    socket.emit("onlineusers", onlineUsers);
   });
 
   socket.on("create-room", (room) => {
     socket.join(room);
+    console.log(room);
   });
 
   socket.on("join-room", (existingRoom) => {

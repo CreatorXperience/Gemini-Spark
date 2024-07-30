@@ -1,6 +1,6 @@
 import Joi from "joi";
 type TPrompt = {
-  conversations: [{ messages?: string }, { model?: string }, string];
+  conversations: [string, { messages?: string }, { model?: string }];
 };
 const txtPromptValidator = (payload: TPrompt) => {
   let txtValidator = Joi.object({

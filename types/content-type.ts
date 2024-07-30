@@ -3,4 +3,8 @@ type TContenta = {
   parts: { text: string }[];
 }[];
 
-export type { TContenta };
+type TSocketReq = {
+  conversations: [string, { messages?: string }, { model?: string }];
+};
+
+export type { TContenta, TSocketReq };

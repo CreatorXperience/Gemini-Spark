@@ -93,6 +93,7 @@ socketIO.on("connection", (socket) => {
 
   socket.on("chat-with-spark", (value: string) => {
     let realData = JSON.parse(value) as TSocketReq;
+    console.log("from chat")
     console.log(realData);
     generateFromText(realData, socket);
   });
@@ -105,7 +106,7 @@ socketIO.on("connection", (socket) => {
       onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
     } else {
       onlineUsers = onlineUsers.filter(
-        (existingUser) => existingUser.userId === user
+        (existingUser) => existingUser.userId != user
       );
       onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
     }

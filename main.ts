@@ -9,6 +9,8 @@ import { initVertex } from "./services/vertex.ai";
 import { initGemini } from "./services/genai";
 import catchErrors from "./middlewares/error";
 import uploadImage from "./routes/upload";
+import { TSocketReq } from "./types/content-type";
+import generateFromText from "./utils/generateFromText";
 require("express-async-errors");
 config();
 
@@ -89,11 +91,22 @@ socketIO.on("connection", (socket) => {
     socket.to(message[0]).emit(message[1]);
   });
 
+  socket.on("chat-with-spark", (value: string) => {
+    let realData = JSON.parse(value) as TSocketReq;
+    console.log(realData);
+    generateFromText(realData, socket);
+  });
+
   socket.on("image-with-message", () => {});
 
   socket.on("addonlineusers", (user) => {
     let userExist = onlineUsers.some((item) => item.userId === user);
     if (!userExist) {
+      onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
+    } else {
+      onlineUsers = onlineUsers.filter(
+        (existingUser) => existingUser.userId === user
+      );
       onlineUsers = [...onlineUsers, { userId: user, socketId: socket.id }];
     }
 

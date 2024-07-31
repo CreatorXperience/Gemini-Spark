@@ -51,7 +51,7 @@ const generateFromText = async (socketPayload: TSocketReq, socket: any) => {
   if (result?.stream) {
     try {
       for await (const item of result?.stream) {
-        socket.emit("spark", item.text);
+        socket.to(socket.id).emit("spark", item.text);
       }
     } catch (e) {
       throw new Error("socket streaming response error");

@@ -102,7 +102,10 @@ socketIO.on("connection", (socket) => {
       return item;
     });
     console.log(history);
-    socket.emit("history", JSON.stringify(history));
+    let conversations = {
+      conversations: history,
+    };
+    socket.emit("history", JSON.stringify(conversations));
     generateFromText(realData, socket);
   });
 

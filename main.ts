@@ -95,7 +95,16 @@ socketIO.on("connection", (socket) => {
     let realData = JSON.parse(value) as TSocketReq;
     console.log("from chat");
     console.log(realData);
-    socket.emit("return", JSON.stringify(realData));
+    let history = realData.conversations
+      .map((item, indx) => {
+        if (indx == 0) {
+          return { messages: item };
+        }
+        return null;
+      })
+      .filter((item) => item != null);
+    console.log(history);
+    socket.emit("history", JSON.stringify(history));
     generateFromText(realData, socket);
   });
 

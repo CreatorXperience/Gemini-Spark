@@ -22,6 +22,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -39,6 +48,7 @@ const genai_1 = require("./services/genai");
 const error_1 = __importDefault(require("./middlewares/error"));
 const upload_1 = __importDefault(require("./routes/upload"));
 const generateFromText_1 = __importDefault(require("./utils/generateFromText"));
+const redis_1 = require("./services/redis");
 require("express-async-errors");
 (0, dotenv_1.config)();
 const PORT = process.env.PORT || 3000;
@@ -93,17 +103,30 @@ const socketIO = new socket_io_1.Server(server, {
     },
 });
 let onlineUsers = [];
-socketIO.on("connection", (socket) => {
+let REDIS_CLIENT;
+socketIO.on("connection", (socket) => __awaiter(void 0, void 0, void 0, function* () {
     logger.info("connected to socket");
     socket.on("message", (message) => {
         socket.to(message[0]).emit(message[1]);
     });
-    socket.on("chat-with-spark", (value) => {
-        let realData = JSON.parse(value);
-        console.log("from chat");
-        console.log(realData);
-        (0, generateFromText_1.default)(realData, socket);
-    });
+    socket.on("sparkChat", (value) => __awaiter(void 0, void 0, void 0, function* () {
+        let cacheObj = JSON.parse(value);
+        let response = yield (0, redis_1.createRedisCacheForUser)({
+            cacheValue: cacheObj.cacheValue,
+            client: REDIS_CLIENT,
+            userId: cacheObj.userId,
+        });
+        let prompt = {
+            conversations: [cacheObj.cacheValue],
+        };
+        if (response) {
+            response.forEach((item) => {
+                let parsedItem = JSON.parse(item);
+                prompt.conversations = [...prompt.conversations, parsedItem];
+            });
+        }
+        (0, generateFromText_1.default)(prompt, socket);
+    }));
     socket.on("image-with-message", () => { });
     socket.on("addonlineusers", (user) => {
         let userExist = onlineUsers.some((item) => item.userId === user);
@@ -128,7 +151,8 @@ socketIO.on("connection", (socket) => {
     socket.on("join-room", (existingRoom) => {
         socket.join(existingRoom);
     });
-});
-server.listen(PORT, () => {
+}));
+server.listen(PORT, () => __awaiter(void 0, void 0, void 0, function* () {
     logger.info(`Listening on port ${PORT}`);
-});
+    REDIS_CLIENT = (yield (0, redis_1.createRedisClientAndConnect)());
+}));

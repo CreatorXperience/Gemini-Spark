@@ -9,8 +9,13 @@ import { initVertex } from "./services/vertex.ai";
 import { initGemini } from "./services/genai";
 import catchErrors from "./middlewares/error";
 import uploadImage from "./routes/upload";
-import { TSocketReq } from "./types/content-type";
+import { TSocketReq, TUserRedisCache } from "./types/content-type";
 import generateFromText from "./utils/generateFromText";
+import {
+  createRedisClientAndConnect,
+  createRedisCacheForUser,
+} from "./services/redis";
+import { RedisClientType } from "@redis/client";
 require("express-async-errors");
 config();
 
@@ -83,30 +88,36 @@ const socketIO = new Server(server, {
 });
 
 let onlineUsers: TOnlineUser[] = [];
+let REDIS_CLIENT: RedisClientType;
 
-socketIO.on("connection", (socket) => {
+socketIO.on("connection", async (socket) => {
   logger.info("connected to socket");
 
   socket.on("message", (message) => {
     socket.to(message[0]).emit(message[1]);
   });
 
-  socket.on("sparkChat", (value: string) => {
-    let realData = JSON.parse(value) as TSocketReq;
-    console.log("from chat");
-    console.log(realData);
-    let history = realData.conversations.map((item, indx) => {
-      if (indx == 0) {
-        return { messages: item };
-      }
-      return item;
+  socket.on("sparkChat", async (value: string) => {
+    let cacheObj = JSON.parse(value) as TUserRedisCache;
+
+    let response = await createRedisCacheForUser({
+      cacheValue: cacheObj.cacheValue,
+      client: REDIS_CLIENT,
+      userId: cacheObj.userId,
     });
-    console.log(history);
-    let conversations = {
-      conversations: history,
+
+    let prompt = {
+      conversations: [cacheObj.cacheValue],
     };
-    socket.emit("history", JSON.stringify(conversations));
-    generateFromText(realData, socket);
+
+    if (response) {
+      response.forEach((item) => {
+        let parsedItem = JSON.parse(item);
+        prompt.conversations = [...prompt.conversations, parsedItem];
+      });
+    }
+
+    generateFromText(prompt as TSocketReq, socket);
   });
 
   socket.on("image-with-message", () => {});
@@ -144,8 +155,10 @@ socketIO.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   logger.info(`Listening on port ${PORT}`);
+
+  REDIS_CLIENT = (await createRedisClientAndConnect()) as RedisClientType;
 });
 
 export { initializeVertex, genAI };

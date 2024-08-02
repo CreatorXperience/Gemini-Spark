@@ -114,8 +114,7 @@ socketIO.on("connection", async (socket) => {
     if (response) {
       await REDIS_CLIENT.del(cacheObj.userId);
       response.forEach((item) => {
-        let parsedItem = JSON.parse(item);
-        prompt.conversations = [...prompt.conversations, parsedItem];
+        prompt.conversations = [...prompt.conversations, item];
       });
     }
 

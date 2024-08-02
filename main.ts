@@ -114,12 +114,29 @@ socketIO.on("connection", async (socket) => {
     if (response) {
       await REDIS_CLIENT.del(cacheObj.userId);
       response.forEach((item) => {
-        prompt.conversations = [...prompt.conversations, item];
+        let pattern = /^:-\*model\*/i;
+        if (pattern.test(item)) {
+          let modelMsg = {
+            model: item,
+          };
+          prompt.conversations = [...prompt.conversations, modelMsg as any];
+        }
+
+        let userMsg = {
+          messages: item,
+        };
+
+        prompt.conversations = [...prompt.conversations, userMsg as any];
       });
     }
 
     console.log(response);
-    generateFromText(prompt as TSocketReq, socket);
+    generateFromText(
+      prompt as TSocketReq,
+      socket,
+      REDIS_CLIENT as any,
+      cacheObj.userId
+    );
   });
 
   socket.on("image-with-message", () => {});

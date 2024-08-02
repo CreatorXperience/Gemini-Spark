@@ -1,9 +1,15 @@
+import { RedisClientType } from "redis";
 import { genAI } from "../main";
 import { TSocketReq } from "../types/content-type";
 import getMemories from "./getMemories";
 import { txtPromptValidator } from "./text_prompt_validator";
 
-const generateFromText = async (socketPayload: TSocketReq, socket: any) => {
+const generateFromText = async (
+  socketPayload: TSocketReq,
+  socket: any,
+  redisClient: RedisClientType,
+  id: string
+) => {
   if (!socketPayload) {
     return socket.emit("generate_error", "text not found");
   }
@@ -49,10 +55,13 @@ const generateFromText = async (socketPayload: TSocketReq, socket: any) => {
   }
 
   if (result?.stream) {
+    let history = "";
     try {
       for await (const item of result?.stream) {
+        history += item.text;
         socket.to(socket.id).emit("spark", item.text);
       }
+      await redisClient.rPush(id, `:*model*${id} ${history}`);
     } catch (e) {
       throw new Error("socket streaming response error");
     }

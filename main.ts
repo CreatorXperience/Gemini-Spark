@@ -98,6 +98,7 @@ socketIO.on("connection", async (socket) => {
   });
 
   socket.on("sparkChat", async (value: string) => {
+    console.log(value);
     let cacheObj = JSON.parse(value) as TUserRedisCache;
 
     let response = await createRedisCacheForUser({

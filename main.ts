@@ -117,6 +117,7 @@ socketIO.on("connection", async (socket) => {
       });
     }
 
+    console.log(response);
     generateFromText(prompt as TSocketReq, socket);
   });
 

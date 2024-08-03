@@ -100,6 +100,7 @@ socketIO.on("connection", async (socket) => {
   socket.on("sparkChat", async (value: string) => {
     console.log(value);
     let cacheObj = JSON.parse(value) as TUserRedisCache;
+    await REDIS_CLIENT.del(cacheObj.userId);
 
     let response = await createRedisCacheForUser({
       cacheValue: cacheObj.cacheValue,
@@ -112,7 +113,6 @@ socketIO.on("connection", async (socket) => {
     };
 
     if (response) {
-      await REDIS_CLIENT.del(cacheObj.userId);
       response.forEach((item) => {
         let pattern = /^:-\*model\*/i;
         if (pattern.test(item)) {

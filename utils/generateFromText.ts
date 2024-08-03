@@ -57,9 +57,9 @@ const generateFromText = async (
       for await (const item of result?.stream) {
         if (item.candidates) {
           history += item.candidates[0].content.parts[0].text;
+          socket.to(socket.id).emit("spark", history);
         }
         console.log(history);
-        socket.to(socket.id).emit("spark", item.text);
       }
       if (history) await redisClient.rPush(id, `:-*model* ${history}`);
     } catch (e) {

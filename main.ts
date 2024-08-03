@@ -101,7 +101,6 @@ socketIO.on("connection", async (socket) => {
     console.log(value);
     let cacheObj = JSON.parse(value) as TUserRedisCache;
     await REDIS_CLIENT.del(cacheObj.userId);
-    socket.join(cacheObj.userId);
 
     let response = await createRedisCacheForUser({
       cacheValue: cacheObj.cacheValue,

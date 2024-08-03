@@ -58,7 +58,7 @@ const generateFromText = async (
       for await (const item of result?.stream) {
         if (item.candidates) {
           history += item.candidates[0].content.parts[0].text;
-          socket.to(socketId ? socketId : socket.id).emit("spark", history);
+          socket.to(id).emit("spark", history);
         }
         console.log(history);
       }

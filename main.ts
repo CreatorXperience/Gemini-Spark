@@ -135,7 +135,8 @@ socketIO.on("connection", async (socket) => {
       prompt as TSocketReq,
       socket,
       REDIS_CLIENT as any,
-      cacheObj.userId
+      cacheObj.userId,
+      cacheObj.socketId
     );
   });
 

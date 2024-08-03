@@ -8,7 +8,8 @@ const generateFromText = async (
   socketPayload: TSocketReq,
   socket: any,
   redisClient: RedisClientType,
-  id: string
+  id: string,
+  socketId?: string
 ) => {
   if (!socketPayload) {
     return socket.emit("generate_error", "text not found");
@@ -57,7 +58,7 @@ const generateFromText = async (
       for await (const item of result?.stream) {
         if (item.candidates) {
           history += item.candidates[0].content.parts[0].text;
-          socket.to(socket.id).emit("spark", history);
+          socket.to(socketId ? socketId : socket.id).emit("spark", history);
         }
         console.log(history);
       }

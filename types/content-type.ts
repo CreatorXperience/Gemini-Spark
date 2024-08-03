@@ -13,6 +13,7 @@ type TUserRedisCache = {
   userId: string;
   cacheValue: string;
   client: RedisClientType<any>;
+  socketId?: string;
 };
 
 export type { TContenta, TSocketReq, TUserRedisCache };

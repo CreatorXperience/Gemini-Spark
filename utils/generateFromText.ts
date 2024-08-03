@@ -61,12 +61,10 @@ const generateFromText = async (
         if (item.candidates) {
           history += item.candidates[0].content.parts[0].text;
         }
-        console.log(
-          item.candidates && item.candidates[0].content.parts[0].text
-        );
+        console.log(history);
         socket.to(socket.id).emit("spark", item.text);
       }
-      if (history) await redisClient.rPush(id, `:*model*${id} ${history}`);
+      if (history) await redisClient.rPush(id, `:-*model* ${history}`);
     } catch (e) {
       throw new Error("socket streaming response error");
     }

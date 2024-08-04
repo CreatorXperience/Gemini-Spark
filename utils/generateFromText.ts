@@ -62,7 +62,10 @@ const generateFromText = async (
         }
         console.log(history);
       }
-      if (history) await redisClient.rPush(id, `:-*model* ${history}`);
+      if (history) {
+        await redisClient.rPush(id, `:-*model* ${history}`);
+        socket.to(id).emit("finish", "done");
+      }
     } catch (e) {
       throw new Error("socket streaming response error");
     }

@@ -67,10 +67,12 @@ const generateFromText = async (
         socket.to(id).emit("finish", "done");
       }
     } catch (e) {
-      socket.emit(
-        "spark-error",
-        "error occured while generating response, Try again later"
-      );
+      socket
+        .to(id)
+        .emit(
+          "spark-error",
+          "error occured while generating response, Try again later"
+        );
     }
   }
 };
